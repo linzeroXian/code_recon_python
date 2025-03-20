@@ -1,4 +1,8 @@
 def statement(invoice, plays):
+    return renderPlainText(invoice, plays)
+
+
+def renderPlainText(invoice, plays):
     def total_amount():
         result = 0
         for perf in invoice['performances']:
