@@ -1,4 +1,4 @@
-def statement(invoice, plays):
+def creat_statement_data(invoice, plays):
     def enrich_performance(a_performance):
         res = a_performance.copy()
         res['play'] = play_for(res)
@@ -11,7 +11,6 @@ def statement(invoice, plays):
 
     def amount_for(a_performance):
         result = 0
-        # play = play_for(a_performance)
         play = a_performance['play']
         if play['type'] == "tragedy":
             result = 40000
@@ -42,12 +41,14 @@ def statement(invoice, plays):
 
     statement_data = {}
     statement_data['customer'] = invoice['customer']
-    # statement_data['performances'] = invoice['performances']
     statement_data['performances'] = [enrich_performance(perf) for perf in invoice['performances']]
     statement_data['total_amount'] = total_amount(statement_data)
     statement_data['total_volume_credits'] = total_volume_credits(statement_data)
+    return statement_data
 
-    return renderPlainText(statement_data)
+
+def statement(invoice, plays):
+    return renderPlainText(creat_statement_data(invoice, plays))
 
 
 def renderPlainText(statement_data):
