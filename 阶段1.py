@@ -1,39 +1,18 @@
 def statement(invoice, plays):
-    statement_data = {}
-    statement_data['customer'] = invoice['customer']
-    statement_data['performances'] = invoice['performances']
-    return renderPlainText(statement_data, plays)
-
-
-def renderPlainText(statement_data, plays):
-    def total_amount():
-        result = 0
-        for perf in statement_data['performances']:
-            result += amount_for(perf)
-        return result
-
-    def total_volume_credits():
-        result = 0
-        for perf in statement_data['performances']:
-            result += volume_credits_for(perf)
-        return result
-
-    def usd(a_number):
-        return "${:,.2f}".format(a_number / 100)
-
-    def volume_credits_for(a_performance):
-        result = 0
-        result += max(a_performance['audience'] - 30, 0)
-        if play_for(a_performance)['type'] == "comedy":
-            result += a_performance['audience'] // 5
-        return result
+    def enrich_performance(a_performance):
+        res = a_performance.copy()
+        res['play'] = play_for(res)
+        res['amount'] = amount_for(res)
+        res['volume_credits'] = volume_credits_for(res)
+        return res
 
     def play_for(a_performance):
         return plays[a_performance['playID']]
 
     def amount_for(a_performance):
         result = 0
-        play = play_for(a_performance)
+        # play = play_for(a_performance)
+        play = a_performance['play']
         if play['type'] == "tragedy":
             result = 40000
             if a_performance['audience'] > 30:
@@ -47,11 +26,45 @@ def renderPlainText(statement_data, plays):
             raise ValueError(f"unknown type: {play['type']}")
         return result
 
+    def volume_credits_for(a_performance):
+        result = 0
+        result += max(a_performance['audience'] - 30, 0)
+        # if play_for(a_performance)['type'] == "comedy":
+        if a_performance['play']['type'] == "comedy":
+            result += a_performance['audience'] // 5
+        return result
+
+    def total_volume_credits(statement_data):
+        result = 0
+        for perf in statement_data['performances']:
+            result += perf['volume_credits']
+        return result
+
+    def total_amount(statement_data):
+        result = 0
+        for perf in statement_data['performances']:
+            result += perf['amount']
+        return result
+
+    statement_data = {}
+    statement_data['customer'] = invoice['customer']
+    # statement_data['performances'] = invoice['performances']
+    statement_data['performances'] = [enrich_performance(perf) for perf in invoice['performances']]
+    statement_data['total_amount'] = total_amount(statement_data)
+    statement_data['total_volume_credits'] = total_volume_credits(statement_data)
+
+    return renderPlainText(statement_data)
+
+
+def renderPlainText(statement_data):
+    def usd(a_number):
+        return "${:,.2f}".format(a_number / 100)
+
     result = f"Statement for {statement_data['customer']}\n"
     for perf in statement_data['performances']:
-        result += f" {play_for(perf)['name']}: {usd(amount_for(perf))} ({perf['audience']} seats)\n"
-    result += f"Amount owed is {usd(total_amount())}\n"
-    result += f"You earned {total_volume_credits()} credits\n"
+        result += f" {perf['play']['name']}: {usd(perf['amount'])} ({perf['audience']} seats)\n"
+    result += f"Amount owed is {usd(statement_data['total_amount'])}\n"
+    result += f"You earned {statement_data['total_volume_credits']} credits\n"
 
     return result
 
