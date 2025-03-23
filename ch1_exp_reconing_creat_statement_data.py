@@ -77,9 +77,6 @@ class ComedyCalculator(PerformanceCalculator):
         result += 300 * self.performance['audience']
         return result
 
-    # def get_volume_credits(self):
-    #     return super.get_volume_credits() + self.performance['audience'] // 5
-
     def get_volume_credits(self):
         # 调用父类的原始计算逻辑
         base_credits = super().get_volume_credits()
