@@ -9,29 +9,62 @@ class PerformanceCalculator:
         result = 0
         play = self.play
         if play['type'] == "tragedy":
-            result = 40000
-            if self.performance['audience'] > 30:
-                result += 1000 * (self.performance['audience'] - 30)
+            raise ValueError(f"bad thing")
         elif play['type'] == "comedy":
-            result = 30000
-            if self.performance['audience'] > 20:
-                result += 10000 + 500 * (self.performance['audience'] - 20)
-            result += 300 * self.performance['audience']
+            raise ValueError(f"bad thing")
         else:
             raise ValueError(f"unknown type: {play['type']}")
         return result
 
     def get_volume_credits(self):
-        result = 0
-        result += max(self.performance['audience'] - 30, 0)
-        if self.play['type'] == "comedy":
-            result += self.performance['audience'] // 5
+        return max(self.performance['audience'] - 30, 0)
+
+
+class TragedyCalculator(PerformanceCalculator):
+    def __init__(self, a_performance, a_play):
+        super().__init__(a_performance, a_play)
+
+    def get_amount(self):
+        result = 40000
+        if self.performance['audience'] > 30:
+            result += 1000 * (self.performance['audience'] - 30)
         return result
+
+
+class ComedyCalculator(PerformanceCalculator):
+    def __init__(self, a_performance, a_play):
+        super().__init__(a_performance, a_play)
+
+    def get_amount(self):
+        result = 30000
+        if self.performance['audience'] > 20:
+            result += 10000 + 500 * (self.performance['audience'] - 20)
+        result += 300 * self.performance['audience']
+        return result
+
+    # def get_volume_credits(self):
+    #     return super.get_volume_credits() + self.performance['audience'] // 5
+
+    def get_volume_credits(self):
+        # 调用父类的原始计算逻辑
+        base_credits = super().get_volume_credits()
+        print('base_credits:', base_credits)
+        # 叠加子类的新逻辑（如观众数除以5）
+        return base_credits + self.performance["audience"] // 5
+
+
+def createPerformanceCalculator(a_performance, a_play):
+    if a_play['type'] == "tragedy":
+        return TragedyCalculator(a_performance, a_play)
+    elif a_play['type'] == "comedy":
+        return ComedyCalculator(a_performance, a_play)
+    else:
+        raise ValueError(f"unknown type: {a_play['type']}")
 
 
 def creat_statement_data(invoice, plays):
     def enrich_performance(a_performance):
-        calculator = PerformanceCalculator(a_performance, play_for(a_performance))
+        calculator = createPerformanceCalculator(a_performance, play_for(a_performance))
         res = a_performance.copy()
         res['play'] = calculator.play
         res['amount'] = calculator.amount
@@ -40,12 +73,6 @@ def creat_statement_data(invoice, plays):
 
     def play_for(a_performance):
         return plays[a_performance['playID']]
-
-    def amount_for(a_performance):
-        return PerformanceCalculator(a_performance, play_for(a_performance)).amount
-
-    def volume_credits_for(a_performance):
-        return PerformanceCalculator(a_performance, play_for(a_performance)).volume_credits
 
     def total_volume_credits(statement_data):
         return sum(perf['volume_credits'] for perf in statement_data['performances'])
