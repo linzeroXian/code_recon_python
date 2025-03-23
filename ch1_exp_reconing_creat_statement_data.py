@@ -1,3 +1,38 @@
+def creat_statement_data(invoice, plays):
+    def enrich_performance(a_performance):
+        calculator = createPerformanceCalculator(a_performance, play_for(a_performance))
+        res = a_performance.copy()
+        res['play'] = calculator.play
+        res['amount'] = calculator.amount
+        res['volume_credits'] = calculator.volume_credits
+        return res
+
+    def play_for(a_performance):
+        return plays[a_performance['playID']]
+
+    def total_volume_credits(statement_data):
+        return sum(perf['volume_credits'] for perf in statement_data['performances'])
+
+    def total_amount(statement_data):
+        return sum(perf['amount'] for perf in statement_data['performances'])
+
+    res = {}
+    res['customer'] = invoice['customer']
+    res['performances'] = [enrich_performance(perf) for perf in invoice['performances']]
+    res['total_amount'] = total_amount(res)
+    res['total_volume_credits'] = total_volume_credits(res)
+    return res
+
+
+def createPerformanceCalculator(a_performance, a_play):
+    if a_play['type'] == "tragedy":
+        return TragedyCalculator(a_performance, a_play)
+    elif a_play['type'] == "comedy":
+        return ComedyCalculator(a_performance, a_play)
+    else:
+        raise ValueError(f"unknown type: {a_play['type']}")
+
+
 class PerformanceCalculator:
     def __init__(self, a_performance, a_play):
         self.performance = a_performance
@@ -51,38 +86,3 @@ class ComedyCalculator(PerformanceCalculator):
         print('base_credits:', base_credits)
         # 叠加子类的新逻辑（如观众数除以5）
         return base_credits + self.performance["audience"] // 5
-
-
-def createPerformanceCalculator(a_performance, a_play):
-    if a_play['type'] == "tragedy":
-        return TragedyCalculator(a_performance, a_play)
-    elif a_play['type'] == "comedy":
-        return ComedyCalculator(a_performance, a_play)
-    else:
-        raise ValueError(f"unknown type: {a_play['type']}")
-
-
-def creat_statement_data(invoice, plays):
-    def enrich_performance(a_performance):
-        calculator = createPerformanceCalculator(a_performance, play_for(a_performance))
-        res = a_performance.copy()
-        res['play'] = calculator.play
-        res['amount'] = calculator.amount
-        res['volume_credits'] = calculator.volume_credits
-        return res
-
-    def play_for(a_performance):
-        return plays[a_performance['playID']]
-
-    def total_volume_credits(statement_data):
-        return sum(perf['volume_credits'] for perf in statement_data['performances'])
-
-    def total_amount(statement_data):
-        return sum(perf['amount'] for perf in statement_data['performances'])
-
-    res = {}
-    res['customer'] = invoice['customer']
-    res['performances'] = [enrich_performance(perf) for perf in invoice['performances']]
-    res['total_amount'] = total_amount(res)
-    res['total_volume_credits'] = total_volume_credits(res)
-    return res
