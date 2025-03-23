@@ -1,3 +1,8 @@
+class PerformanceCalculator:
+    def __init__(self, a_performance):
+        self.a_performance = a_performance
+
+
 def creat_statement_data(invoice, plays):
     def enrich_performance(a_performance):
         res = a_performance.copy()
